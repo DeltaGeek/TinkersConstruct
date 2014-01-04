@@ -227,11 +227,6 @@ public class Smeltery
 
     public static ItemStack getRenderIndex (ItemStack input)
     {
-        if(input.getItem() instanceof ToolCore)
-        {
-            return input;
-        }
-
         return instance.renderIndex.get(Arrays.asList(input.itemID, input.getItemDamage()));
     }
 
