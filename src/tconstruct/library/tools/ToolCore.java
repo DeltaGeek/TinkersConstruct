@@ -605,6 +605,38 @@ public abstract class ToolCore extends Item implements IEnergyContainerItem, ICu
         return TConstructRegistry.getItem("toolRod");//TContent.toolRod;
     }
 
+    public ItemStack getHeadItemStack (ItemStack item)
+    {
+        int headMaterial = item.getTagCompound().getCompoundTag("InfiTool").getInteger("Head");
+        return new ItemStack(getHeadItem(), 1, headMaterial);
+    }
+
+    public ItemStack getHandleItemStack (ItemStack item)
+    {
+        int handleMaterial = item.getTagCompound().getCompoundTag("InfiTool").getInteger("Handle");
+        return new ItemStack(getHandleItem(), 1, handleMaterial);
+    }
+
+    public ItemStack getAccessoryItemStack (ItemStack item)
+    {
+        Item accessory = getAccessoryItem();
+        if(accessory == null)
+            return null;
+
+        int accessoryMaterial = item.getTagCompound().getCompoundTag("InfiTool").getInteger("Accessory");
+        return new ItemStack(accessory, 1, accessoryMaterial);
+    }
+
+    public ItemStack getExtraItemStack (ItemStack item)
+    {
+        Item extra = getExtraItem();
+        if(extra == null)
+            return null;
+
+        int extraMaterial = item.getTagCompound().getCompoundTag("InfiTool").getInteger("Extra");
+        return new ItemStack(extra, 1, extraMaterial);
+    }
+
     /* Updating */
 
     @Override

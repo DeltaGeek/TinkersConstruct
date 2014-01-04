@@ -4,8 +4,11 @@ import java.util.*;
 
 import net.minecraft.block.Block;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.oredict.OreDictionary;
+import tconstruct.TConstruct;
+import tconstruct.library.tools.ToolCore;
 
 /** Melting and hacking, churn and burn */
 public class Smeltery
@@ -85,6 +88,29 @@ public class Smeltery
         if (item == null)
             return 20;
 
+        if(item.getItem() instanceof ToolCore)
+        {
+            ToolCore tool = (ToolCore) item.getItem();
+
+            ItemStack headStack = tool.getHeadItemStack(item);
+            ItemStack handleStack = tool.getHandleItemStack(item);
+            ItemStack accessoryStack = tool.getAccessoryItemStack(item);
+            ItemStack extraStack = tool.getExtraItemStack(item);
+            ItemStack[] stacks = new ItemStack[]{headStack,handleStack,accessoryStack,extraStack};
+
+            int maxTemp = 20;
+            for(ItemStack stack : stacks)
+            {
+                if(stack != null)
+                {
+                    int partTemp = getLiquifyTemperature(stack);
+                    maxTemp = Math.max(maxTemp, partTemp);
+                }
+            }
+
+            return maxTemp;
+        }
+
         Integer temp = instance.temperatureList.get(Arrays.asList(item.itemID, item.getItemDamage()));
         if (temp == null)
             return 20;
@@ -107,15 +133,83 @@ public class Smeltery
      * @param item The Source ItemStack
      * @return The result ItemStack
      */
-    public static FluidStack getSmelteryResult (ItemStack item)
+    public static FluidStack[] getSmelteryResult (ItemStack item)
     {
         if (item == null)
             return null;
 
+        if(item.getItem() instanceof ToolCore)
+        {
+            ToolCore tool = (ToolCore) item.getItem();
+
+            Map<FluidStack, FluidStack> results = new HashMap<FluidStack, FluidStack>();
+            FluidStack[] headResult = getSmelteryResult(tool.getHeadItemStack(item));
+            FluidStack[] handleResult = getSmelteryResult(tool.getHandleItemStack(item));
+            FluidStack[] accessoryResult = getSmelteryResult(tool.getAccessoryItemStack(item));
+            FluidStack[] extraResult = getSmelteryResult(tool.getExtraItemStack(item));
+
+            NBTTagCompound infiToolTags = item.getTagCompound().getCompoundTag("InfiTool");
+
+            final int damage = infiToolTags.getInteger("Damage");
+            final int maxDurability = infiToolTags.getInteger("TotalDurability");
+            final int availableDurability = maxDurability - damage;
+            final double percent = availableDurability / (double) maxDurability;
+
+            if(headResult != null && headResult[0] != null)
+            {
+                results.put(headResult[0], headResult[0]);
+            }
+            if(handleResult != null && handleResult[0] != null)
+            {
+                putOrUpdateFluidStack(results, handleResult[0]);
+            }
+            if(accessoryResult != null && accessoryResult[0] != null)
+            {
+                putOrUpdateFluidStack(results, accessoryResult[0]);
+            }
+            if(extraResult != null && extraResult[0] != null)
+            {
+                putOrUpdateFluidStack(results, extraResult[0]);
+            }
+
+            for(FluidStack stack : results.values())
+                stack.amount = damagePercentInNuggets(stack.amount, percent);
+
+            return results.values().toArray(new FluidStack[0]);
+        }
+
         FluidStack stack = instance.smeltingList.get(Arrays.asList(item.itemID, item.getItemDamage()));
         if (stack == null)
             return null;
-        return stack.copy();
+        return new FluidStack[] {stack.copy()};
+    }
+
+    /**
+     * Adds a FluidStack F to the provided Map<FluidStack, FluidStack> if it does not already exist in the Map
+     * Otherwise, adds F.amount to the existing FluidStack
+     * @param results
+     * @param key
+     */
+    private static void putOrUpdateFluidStack(Map<FluidStack, FluidStack> results, FluidStack key) {
+        if(results.containsKey(key))
+            results.get(key).amount += key.amount;
+        else
+            results.put(key, key);
+    }
+
+    /**
+     * Returns a fluid amount multiplied by a percentage then rounded down to the nearest nugget fluid value
+     * @param amount The base amount of fluid
+     * @param percent The percentage of fluid we want to keep
+     * @return amount * percent floored to the nearest nugget fluid value
+     */
+    private static int damagePercentInNuggets(int amount, double percent)
+    {
+        int amountInNuggets = amount / TConstruct.nuggetLiquidValue;
+        int percentInNuggets = (int) (amountInNuggets * percent);
+        int result = percentInNuggets * TConstruct.nuggetLiquidValue;
+
+        return result;
     }
 
     /**
@@ -133,6 +227,11 @@ public class Smeltery
 
     public static ItemStack getRenderIndex (ItemStack input)
     {
+        if(input.getItem() instanceof ToolCore)
+        {
+            return input;
+        }
+
         return instance.renderIndex.get(Arrays.asList(input.itemID, input.getItemDamage()));
     }
 

@@ -106,21 +106,24 @@ public class SmelteryComponent extends LogicComponent
                     }
                     else if (activeTemps[i] >= meltingTemps[i] && !world.isRemote)
                     {
-                        FluidStack result = getResultFor(slot);
+                        FluidStack[] result = getResultFor(slot);
                         if (result != null)
                         {
-                            if (multitank.addFluidToTank(result, false))
+                            for(FluidStack stack : result)
                             {
-                                master.setInventorySlotContents(i, null);
-                                activeTemps[i] = 20;
-                                ArrayList alloys = Smeltery.mixMetals(multitank.fluidlist);
-                                for (int al = 0; al < alloys.size(); al++)
+                                if (multitank.addFluidToTank(stack, false))
                                 {
-                                    FluidStack liquid = (FluidStack) alloys.get(al);
-                                    multitank.addFluidToTank(liquid, true);
+                                    master.setInventorySlotContents(i, null);
+                                    activeTemps[i] = 20;
+                                    ArrayList alloys = Smeltery.mixMetals(multitank.fluidlist);
+                                    for (int al = 0; al < alloys.size(); al++)
+                                    {
+                                        FluidStack liquid = (FluidStack) alloys.get(al);
+                                        multitank.addFluidToTank(liquid, true);
+                                    }
+                                    master.onInventoryChanged();
+                                    master.setUpdateFluids();
                                 }
-                                master.onInventoryChanged();
-                                master.setUpdateFluids();
                             }
                         }
                     }
@@ -231,7 +234,7 @@ public class SmelteryComponent extends LogicComponent
         return amount;
     }
 
-    public FluidStack getResultFor (ItemStack stack)
+    public FluidStack[] getResultFor (ItemStack stack)
     {
         return Smeltery.instance.getSmelteryResult(stack);
     }

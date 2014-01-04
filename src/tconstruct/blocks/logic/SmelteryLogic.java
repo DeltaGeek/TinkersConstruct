@@ -436,20 +436,23 @@ public class SmelteryLogic extends InventoryLogic implements IActiveLogic, IFaci
                     {
                         if (!worldObj.isRemote)
                         {
-                            FluidStack result = getResultFor(inventory[i]);
+                            FluidStack[] result = getResultFor(inventory[i]);
                             if (result != null)
                             {
-                                if (addMoltenMetal(result, false))
+                                for(FluidStack stack : result)
                                 {
-                                    inventory[i] = null;
-                                    activeTemps[i] = 20;
-                                    ArrayList alloys = Smeltery.mixMetals(moltenMetal);
-                                    for (int al = 0; al < alloys.size(); al++)
+                                    if (addMoltenMetal(stack, false))
                                     {
-                                        FluidStack liquid = (FluidStack) alloys.get(al);
-                                        addMoltenMetal(liquid, true);
+                                        inventory[i] = null;
+                                        activeTemps[i] = 20;
+                                        ArrayList alloys = Smeltery.mixMetals(moltenMetal);
+                                        for (int al = 0; al < alloys.size(); al++)
+                                        {
+                                            FluidStack liquid = (FluidStack) alloys.get(al);
+                                            addMoltenMetal(liquid, true);
+                                        }
+                                        onInventoryChanged();
                                     }
-                                    onInventoryChanged();
                                 }
                             }
                         }
@@ -645,7 +648,7 @@ public class SmelteryLogic extends InventoryLogic implements IActiveLogic, IFaci
         }
     }
 
-    public FluidStack getResultFor (ItemStack stack)
+    public FluidStack[] getResultFor (ItemStack stack)
     {
         return Smeltery.instance.getSmelteryResult(stack);
     }
